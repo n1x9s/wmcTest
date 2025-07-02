@@ -1,4 +1,3 @@
-import uuid
 from enum import Enum as PyEnum
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
@@ -42,7 +41,6 @@ class ProfileModel(Base):
         'comment': 'Модель профиля пользователя',
     }
 
-    id = Column(UUID, unique=True, primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID, ForeignKey('user.id', ondelete='CASCADE'), unique=True, nullable=False,
                      comment="ID пользователя, привязанного к профилю")
 
@@ -76,7 +74,6 @@ class WBAccountModel(Base):
     __table_args__ = {
         'comment': 'Модель кабинета маркетплейса WB',
     }
-    id = Column(UUID, unique=True, default=uuid.uuid4, primary_key=True)
     name = Column(String, server_default="Marketplace Account", nullable=False,
                   comment="Название кабинета")
     profile_id = Column(UUID, ForeignKey('profiles.id', ondelete='CASCADE'), nullable=False,
