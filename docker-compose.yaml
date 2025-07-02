@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  restapi:
+    build:
+      context: .
+      args:
+        DOCKER_IMAGE_VERSION: $DOCKER_IMAGE_VERSION
+        GITEA_TOKEN_NAME: $GITEA_TOKEN_NAME
+        GITEA_TOKEN: $GITEA_TOKEN
+    container_name: restapi
+    image: "restapi:${DOCKER_IMAGE_VERSION}"
+    env_file:
+      - .env
+    ports:
+      - "8400:8100"
+    volumes:
+      - ./:/app
+    depends_on:
+      - postgres
+    networks:
+      - wms-restapi
+      - macvlan_net
+
+  postgres:
+    container_name: wms_postgres
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    ports:
+      - "8432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wms-restapi
+
+networks:
+  wms-restapi:
+    external: true
+  macvlan_net:
+    driver: macvlan
+    driver_opts:
+      parent: enp6s0  # интерфейс на серваке
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24  #  подсеть локальной сети
+          gateway: 192.168.1.1    # шлюз сети
+
+volumes:
+  postgres_data:
+  redis_data:

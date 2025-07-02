@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "restapi"
+version = "1.0.0"
+description = ""
+authors = [
+    "Zinovev Danil <danil.zinovev.16@mail.ru>",
+    "dvraklanov <raklanov.danil.v@gmail.com>"
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.4"
+python-dotenv = "^1.0.1"
+uvicorn = "^0.32.0"
+gunicorn = "^23.0.0"
+fastapi-users = {extras = ["sqlalchemy"], version = "^14.0.0"}
+asyncpg = "^0.30.0"
+loguru = "^0.7.2"
+alembic = "^1.14.0"
+psycopg2-binary = "^2.9.10"
+fastapi-jwt = "^0.3.0"
+python-jose = "^3.3.0"
+sqlalchemy = "^2.0.36"
+#marketplace-client = "^0.1.11"
+openpyxl = "^3.1.5"
+pycparser = "^2.22"
+
+[[tool.poetry.source]]
+name = "gitea"
+url = "https://gitea.intelligent-system.ru/api/packages/wms/pypi/simple/"
+priority = "supplemental"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
