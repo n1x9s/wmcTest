@@ -21,10 +21,10 @@ class Config(BaseSettings):
     POSTGRES_HOST: str = Field(..., env='POSTGRES_HOST')
     POSTGRES_PORT: int = Field(..., env='POSTGRES_PORT')
 
-    SMTP_SERVER: str = Field(..., env='SMTP_SERVER')
-    SMTP_PORT: int = Field(..., env='SMTP_PORT')
-    SMTP_USER: str = Field(..., env='SMTP_USER')
-    SMTP_PASSWORD: str = Field(..., env='SMTP_PASSWORD')
+    # SMTP_SERVER: str = Field(..., env='SMTP_SERVER')
+    # SMTP_PORT: int = Field(..., env='SMTP_PORT')
+    # SMTP_USER: str = Field(..., env='SMTP_USER')
+    # SMTP_PASSWORD: str = Field(..., env='SMTP_PASSWORD')
 
     JWT_SECRET: str = Field(..., env='JWT_SECRET')
 
@@ -61,21 +61,21 @@ class Config(BaseSettings):
             raise ValueError(f"Postgres Error: {e}")
         return values
 
-    @root_validator
-    def check_smtp_connection(cls, values):
-        try:
-            with smtplib.SMTP(values['SMTP_SERVER'], values['SMTP_PORT']) as server:
-                server.starttls()  # Включаем TLS шифрование
-                server.login(values['SMTP_USER'], values['SMTP_PASSWORD'])
-        except smtplib.SMTPAuthenticationError as e:
-            raise ValueError(f"Ошибка аутентификации SMTP: {e}")
-        except smtplib.SMTPConnectError as e:
-            raise ValueError(f"Ошибка подключения к SMTP серверу: {e}")
-        except smtplib.SMTPException as e:
-            raise ValueError(f"Ошибка SMTP: {e}")
-        except Exception as e:
-            raise ValueError(f"SMTP Error: {e}")
-        return values
+    # @root_validator
+    # def check_smtp_connection(cls, values):
+    #     try:
+    #         with smtplib.SMTP(values['SMTP_SERVER'], values['SMTP_PORT']) as server:
+    #             server.starttls()  # Включаем TLS шифрование
+    #             server.login(values['SMTP_USER'], values['SMTP_PASSWORD'])
+    #     except smtplib.SMTPAuthenticationError as e:
+    #         raise ValueError(f"Ошибка аутентификации SMTP: {e}")
+    #     except smtplib.SMTPConnectError as e:
+    #         raise ValueError(f"Ошибка подключения к SMTP серверу: {e}")
+    #     except smtplib.SMTPException as e:
+    #         raise ValueError(f"Ошибка SMTP: {e}")
+    #     except Exception as e:
+    #         raise ValueError(f"SMTP Error: {e}")
+    #     return values
 
 
 config = Config()

@@ -43,7 +43,7 @@ async def get_profile_by_profile_id(
     """Профиль пользователя по ID профиля (владелец профиля или суперпользователь)"""
     profile = await profile_service.get_by_id(profile_id=profile_id)
 
-    if profile is not None:
+    if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Профиль не найден")
 
     return ProfileResponseSchema.model_validate(profile)
