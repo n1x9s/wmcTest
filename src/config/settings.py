@@ -64,7 +64,6 @@ class Config(BaseSettings):
     @root_validator
     def check_smtp_connection(cls, values):
         try:
-            # Создаем подключение к SMTP серверу
             with smtplib.SMTP(values['SMTP_SERVER'], values['SMTP_PORT']) as server:
                 server.starttls()  # Включаем TLS шифрование
                 server.login(values['SMTP_USER'], values['SMTP_PASSWORD'])
