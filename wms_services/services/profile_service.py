@@ -58,32 +58,31 @@ class ProfileService(BaseService):
             logger.error(f"ошибка получения списка профилей: {e}")
             raise
 
-    # TODO: Убрать не используемый метод
-    async def add_tokens(
-            self,
-            profile_id: uuid.UUID,
-            tokens: dict[str, str],
-    ) -> Optional[ProfileModel]:
-        """
-        Добавление токена
-        :param profile_id:
-        :param tokens: словарь, где ключ соответствует названию поля в БД
-        :return:
-        """
-        try:
-            profile = await self.profile_repo.get(profile_id)
+    # async def add_tokens(
+    #         self,
+    #         profile_id: uuid.UUID,
+    #         tokens: dict[str, str],
+    # ) -> Optional[ProfileModel]:
+    #     """
+    #     Добавление токена
+    #     :param profile_id:
+    #     :param tokens: словарь, где ключ соответствует названию поля в БД
+    #     :return:
+    #     """
+    #     try:
+    #         profile = await self.profile_repo.get(profile_id)
 
-            if profile is None:
-                return None
+    #         if profile is None:
+    #             return None
 
-            for key, value in tokens.items():
-                if hasattr(profile, key):
-                    setattr(profile, key, value)
+    #         for key, value in tokens.items():
+    #             if hasattr(profile, key):
+    #                 setattr(profile, key, value)
 
-            return await self.profile_repo.save(profile)
-        except Exception as e:
-            logger.error(f"Error with adding tokens: {e}")
-            raise
+    #         return await self.profile_repo.save(profile)
+    #     except Exception as e:
+    #         logger.error(f"Error with adding tokens: {e}")
+    #         raise
 
     async def create_profile(self, profile: ProfileRequestSchema) -> ProfileModel:
         try:
