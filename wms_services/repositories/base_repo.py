@@ -1,7 +1,7 @@
 from functools import wraps
 from typing import TypeVar, Generic, Sequence, Any, Union
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -124,17 +124,41 @@ class BaseDBRepository(Generic[AbstractModel]):
     @rollback_wrapper
     async def delete(
         self,
-        obj: AbstractModel | Sequence[AbstractModel],
-        many: bool = False
-    ):
-        # TODO: переделать, чтобы можно было по условию удалять, не получая все объекты
-
-        if many and isinstance(obj, Sequence):
-            for obj_item in obj:
-                await self.session.delete(obj_item)
+        obj: AbstractModel | Sequence[AbstractModel] | None = None,
+        many: bool = False,
+        whereclause=None
+    ) -> int:
+        """
+        Удаление объектов из базы данных.
+        
+        :param obj: Объект(ы) для удаления. Если None, то используется whereclause
+        :param many: Флаг для множественного удаления объектов
+        :param whereclause: Условие для удаления (используется если obj is None)
+        :return: Количество удаленных записей
+        
+        Examples:
+        - await repo.delete(user_obj) - удалить конкретный объект
+        - await repo.delete([user1, user2], many=True) - удалить список объектов
+        - await repo.delete(whereclause=User.is_active == False) - удалить по условию
+        - await repo.delete(whereclause=User.created_at < some_date) - удалить старые записи
+        """
+        if obj is not None:
+            # Удаление конкретных объектов (старое поведение)
+            if many and isinstance(obj, Sequence):
+                for obj_item in obj:
+                    await self.session.delete(obj_item)
+            else:
+                await self.session.delete(obj)
+            await self.session.commit()
+            return len(obj) if many and isinstance(obj, Sequence) else 1
+        elif whereclause is not None:
+            # Удаление по условию (новая функциональность)
+            stmt = delete(self.type_model).where(whereclause)
+            result = await self.session.execute(stmt)
+            await self.session.commit()
+            return result.rowcount
         else:
-            await self.session.delete(obj)
-        await self.session.commit()
+            raise ValueError("Either 'obj' or 'whereclause' must be provided")
 
     @rollback_wrapper
     async def save(
@@ -182,3 +206,28 @@ class BaseDBRepository(Generic[AbstractModel]):
         else:
             await self.session.refresh(obj)
         return obj
+
+    # @rollback_wrapper
+    # async def delete_where(
+    #     self,
+    #     whereclause,
+    #     limit: int | None = None
+    # ) -> int:
+    #     """
+    #     Удаление записей по условию без предварительного получения объектов.
+        
+    #     :param whereclause: Условие для удаления
+    #     :param limit: Максимальное количество записей для удаления
+    #     :return: Количество удаленных записей
+        
+    #     Examples:
+    #     - await repo.delete_where(User.is_active == False)
+    #     - await repo.delete_where(User.created_at < some_date, limit=100)
+    #     """
+    #     stmt = delete(self.type_model).where(whereclause)
+    #     if limit is not None:
+    #         stmt = stmt.limit(limit)
+        
+    #     result = await self.session.execute(stmt)
+    #     await self.session.commit()
+    #     return result.rowcount
