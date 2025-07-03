@@ -4,6 +4,7 @@ from typing import TypeVar, Generic, Sequence, Any, Union
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 AbstractModel = TypeVar('AbstractModel')
 
@@ -33,15 +34,30 @@ class BaseDBRepository(Generic[AbstractModel]):
 
     @rollback_wrapper
     async def get(self,
-                  ident: Any) -> AbstractModel | None:
+                  ident: Any,
+                  selectin_load: list[Any] | None = None) -> AbstractModel | None:
         """Get an ONE model from the database with PK.
-        TODO: Добавить параметр selectin или joinload для возможности подгрузки связанных моделей
-
+        
         :param ident: Key which need to find entry in database
-        :return:
+        :param selectin_load: List of relationships to load using selectinload
+        :return: Model instance or None
+        
+        Examples:
+        - await repo.get(user_id, selectin_load=[User.profile])
+        - await repo.get(user_id, selectin_load=[User.profile, User.wb_accounts])
         """
-
-        return await self.session.get(entity=self.type_model, ident=ident)
+        # Если нужны дополнительные загрузки, используем select с options
+        if selectin_load:
+            statement = select(self.type_model).where(self.type_model.id == ident)
+            
+            for relation in selectin_load:
+                statement = statement.options(selectinload(relation))
+            
+            result = await self.session.execute(statement)
+            return result.scalar_one_or_none()
+        else:
+            # Стандартное поведение для простых запросов
+            return await self.session.get(entity=self.type_model, ident=ident)
 
     @rollback_wrapper
     async def get_where(self,
@@ -51,7 +67,8 @@ class BaseDBRepository(Generic[AbstractModel]):
                         offset: int | None = None,
                         group_by=None,
                         order_by=None,
-                        columns: list[Any] | None = None) -> Union[Sequence[AbstractModel], AbstractModel, Sequence[tuple], tuple, Sequence[Any], Any, None]:
+                        columns: list[Any] | None = None,
+                        selectin_load: list[Any] | None = None) -> Union[Sequence[AbstractModel], AbstractModel, Sequence[tuple], tuple, Sequence[Any], Any, None]:
         """Get an ONE model from the database with whereclause.
         :param offset:
         :param many:
@@ -64,6 +81,7 @@ class BaseDBRepository(Generic[AbstractModel]):
                        - [Model.name] - получить только поле name
                        - [Model.id, Model.name] - получить поля id и name
                        - [func.count(Model.id)] - получить количество записей
+        :param selectin_load: List of relationships to load using selectinload
         :return: Model if only one model was found, else None.
                 If columns specified, returns selected column values or tuples.
         """
@@ -83,6 +101,11 @@ class BaseDBRepository(Generic[AbstractModel]):
             statement = statement.order_by(order_by)
         if group_by is not None:
             statement = statement.group_by(group_by)
+
+        # Добавляем загрузку связанных моделей только если не указаны отдельные columns
+        if columns is None and selectin_load:
+            for relation in selectin_load:
+                statement = statement.options(selectinload(relation))
 
         result = await self.session.execute(statement)
         
