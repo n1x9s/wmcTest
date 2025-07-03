@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import TypeVar, Generic, Sequence, Any
+from typing import TypeVar, Generic, Sequence, Any, Union
 
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -50,7 +50,8 @@ class BaseDBRepository(Generic[AbstractModel]):
                         limit: int | None = None,
                         offset: int | None = None,
                         group_by=None,
-                        order_by=None) -> Sequence[AbstractModel] | AbstractModel | None:
+                        order_by=None,
+                        columns: list[Any] | None = None) -> Union[Sequence[AbstractModel], AbstractModel, Sequence[tuple], tuple, Sequence[Any], Any, None]:
         """Get an ONE model from the database with whereclause.
         :param offset:
         :param many:
@@ -58,10 +59,20 @@ class BaseDBRepository(Generic[AbstractModel]):
         :param limit: Number of elements per query
         :param group_by: Name of field for grouping
         :param order_by: Name of field for ordering
+        :param columns: List of specific columns to select. If None, selects all columns.
+                       Examples:
+                       - [Model.name] - получить только поле name
+                       - [Model.id, Model.name] - получить поля id и name
+                       - [func.count(Model.id)] - получить количество записей
         :return: Model if only one model was found, else None.
+                If columns specified, returns selected column values or tuples.
         """
-        # TODO: Добавить получение только отдельных полей
-        statement = select(self.type_model)
+        # Выбираем либо отдельные поля, либо всю модель
+        if columns is not None:
+            statement = select(*columns)
+        else:
+            statement = select(self.type_model)
+            
         if whereclause is not None:
             statement = statement.where(whereclause)
         if limit is not None:
@@ -74,7 +85,18 @@ class BaseDBRepository(Generic[AbstractModel]):
             statement = statement.group_by(group_by)
 
         result = await self.session.execute(statement)
-        return result.scalars().all() if many else result.scalar_one_or_none()
+        
+        # Если выбираем отдельные поля, возвращаем кортежи или отдельные значения
+        if columns is not None:
+            if len(columns) == 1:
+                # Если выбран только один столбец, возвращаем значения напрямую
+                return result.scalars().all() if many else result.scalar_one_or_none()
+            else:
+                # Если выбрано несколько столбцов, возвращаем кортежи
+                return result.all() if many else result.first()
+        else:
+            # Если выбираем всю модель, возвращаем объекты модели
+            return result.scalars().all() if many else result.scalar_one_or_none()
 
     @rollback_wrapper
     async def delete(
