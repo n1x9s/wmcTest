@@ -38,5 +38,4 @@ def ensure_directory_exists(pathdirs: list[list[str]]):
             logger.info(f"Directory '{pathdir}' already exists.")
 
 
-# TODO придумать как работать с путями
-REPORT_DIR = config.BASE_DIR.joinpath("src", "assets", "reports")
+# REPORT_DIR = config.BASE_DIR.joinpath("src", "assets", "reports")

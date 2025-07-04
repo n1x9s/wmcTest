@@ -37,6 +37,9 @@ class Config(BaseSettings):
 
     BASE_DIR: Path = Path(__file__).parent.parent.parent  # это на уровне с файлом .env
 
+    ASSETS_DIR = BASE_DIR / "src" / "assets"
+    REPORTS_DIR = ASSETS_DIR / "reports"
+
     # Валидация на пустые поля
     @validator("*", pre=True)
     def check_empty_str(cls, value, field):
